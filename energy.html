@@ -3,72 +3,106 @@
 <head>
     <meta charset="utf-8">
     <title>世界地图示例</title>
-    <!-- 引入 echarts.js -->
-    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+    
 </head>
 <body>
 
-
-
-    
     <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
-    <div id="main" style="width: 2000px; height: 1000px;"></div>
+    <div id="main" style="width: 1000px; height: 500px;"></div>
+    <script src="https://cdn.staticfile.org/echarts/5.5.0/echarts.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
     <script type="text/javascript">
-        // 初始化 ECharts 实例
-        var myChart = echarts.init(document.getElementById('main'));
-
-        // 加载 world.geojson 文件
-        fetch('./Data/world.geojson')
-            .then(response => response.json())
-            .then(geoJson => {
-                // 注册地图
-                echarts.registerMap('world', geoJson);
-
-                // 指定图表的配置项和数据
-                var option = {
-                    title: {
-                        text: '世界地图',
-                        left: 'center'
-                    },
-                    tooltip: {
-                        trigger: 'item',
-                        formatter: '{b}'
-                    },
-                    visualMap: {
-                        min: 0,
-                        max: 1000,
-                        left: 'left',
-                        top: 'bottom',
-                        text: ['高', '低'],
-                        calculable: true
-                    },
-                    series: [
-                        {
-                            name: '世界地图',
-                            type: 'map',
-                            mapType: 'world',
-                            roam: true,
-                            label: {
-                                show: false
-                            },
-                            data: [
-                                { name: 'Afghanistan', value: 28397.812 },
-                                { name: 'Angola', value: 19549.124 },
-                                { name: 'Albania', value: 3150.143 },
-                                { name: 'United Arab Emirates', value: 8441.537 },
-                                { name: 'Argentina', value: 40374.224 },
-                                // 添加更多数据
-                            ]
-                        }
-                    ]
+        var chartDom = document.getElementById('main');
+        var myChart = echarts.init(chartDom);
+        var json_data;
+        var option;
+        function randomPieSeries(center, radius, data_dict) {
+            const data = ['Coal', 'Nuclear', 'Oil', 'Others'].map((t) => {
+                return {
+                    value: data_dict[t],
+                    name: t
                 };
-
-                // 使用刚指定的配置项和数据显示图表
-                myChart.setOption(option);
-            })
-            .catch(error => {
-                console.error('Error loading geojson file:', error);
             });
+            return {
+                type: 'pie',
+                coordinateSystem: 'geo',
+                tooltip: {
+                    formatter: '{b}: {d}%'
+                },
+                label: {
+                    show: false
+                },
+                labelLine: {
+                    show: false
+                },
+                animationDuration: 0,
+                radius,
+                center,
+                data
+            };
+        }
+
+        myChart.showLoading();
+        $.get('./Data/world.geojson', function (geoJson) {
+        echarts.registerMap('world', geoJson);
+        
+        option = {
+            timeline: {
+                axisType: 'category',
+                autoPlay: false,
+                playInterval: 500,
+                data: [],
+                tooltip: { formatter: year => year }
+            },
+            geo: {
+                map: 'world',
+                roam: true,
+                itemStyle: {
+                    areaColor: '#e7e8ea'
+                }
+            }, 
+            tooltip: {},
+            legend: {},
+            series: [
+            ],
+            animation: false,
+        };
+        myChart.hideLoading();
+        myChart.setOption(option);
+        });
+
+        option && myChart.setOption(option);
+
+        fetch('./Data/Energy/energy.json')
+        .then(response => {
+            return response.json();
+        })
+        .then(data => {
+            json_data = data
+            myChart.setOption({
+                timeline: {
+                    data: Object.keys(data)
+                },
+                series: Object.values(data[1960]).map(item =>
+                    randomPieSeries(item['Pos']['point'], 10, 
+                    item)
+                )
+            });
+        })
+        .catch(error => {
+            console.error('获取或解析JSON时出错:', error);
+        });
+
+        myChart.on('timelinechanged', function (event) {
+            console.log('当前选中的时间点索引：', 
+                 json_data);
+            myChart.setOption({
+                series: Object.values(Object.values(json_data)[event.currentIndex]).map(item =>
+                    randomPieSeries(item['Pos']['point'], 10, 
+                    item)
+                )
+            });
+        });
     </script>
 </body>
 </html>

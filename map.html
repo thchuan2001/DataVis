@@ -20,10 +20,10 @@
         myChart.showLoading();
         $.get('./Data/world.geojson', function (geoJson) {
         echarts.registerMap('world', geoJson);
-        function randomPieSeries(center, radius) {
+        function randomPieSeries(center, radius, data_dict) {
             const data = ['Coal', 'Nuclear', 'Oil', 'Others'].map((t) => {
             return {
-                value: Math.round(Math.random() * 100),
+                value: data_dict[t],
                 name: t
             };
             });
@@ -31,7 +31,7 @@
             type: 'pie',
             coordinateSystem: 'geo',
             tooltip: {
-                formatter: '{b}: {c} ({d}%)'
+                formatter: '{b}: {d}%'
             },
             label: {
                 show: false
@@ -52,11 +52,17 @@
             itemStyle: {
                 areaColor: '#e7e8ea'
             }
-            },
+            }, 
             tooltip: {},
             legend: {},
             series: [
-            randomPieSeries([-86.753504, 33.01077], 15)
+            randomPieSeries([66.08669017344639, 33.85639924331851], 15, 
+                {
+                    'Coal': 25,
+                    'Nuclear': 25,
+                    'Oil': 25,
+                    'Others': 25
+                })
             ]
         };
         myChart.hideLoading();

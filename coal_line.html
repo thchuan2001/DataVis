@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 700px); /* 创建三列，每列宽度100px */
+            gap: 10px;
+        }
+        .box {
+            height: 100px
+        }
+    </style>
+<head>
+    <meta charset="utf-8">
+    <title>世界地图示例</title>
+    
+</head>
+<body>
+
+    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+    <div class="container">
+        <div class="box" id="income_coal" style="width: 700px; height: 500px;"></div>
+        <div class="box" id="income_area" style="width: 700px; height: 500px;"></div>
+    </div>
+    <script src="https://cdn.staticfile.org/echarts/5.5.0/echarts.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        var chartDom = document.getElementById('income_coal');
+        var myChart = echarts.init(chartDom);
+        var option;
+        $.get(
+            './Data/Energy/coal_for_line.json',
+            function (_rawData) {
+                run(_rawData);
+            }
+        );
+        function run(_rawData) {
+            const countries = ['High income', 'Middle income', 'Lower middle income'];
+            const datasetWithFilters = [];
+            const seriesList = [];
+            echarts.util.each(countries, function (country) {
+                var datasetId = 'dataset_' + country;
+                datasetWithFilters.push({
+                    id: datasetId,
+                    fromDatasetId: 'dataset_raw',
+                    transform: {
+                        type: 'filter',
+                        config: {
+                        and: [
+                            { dimension: 'year', gte: 1960 },
+                            { dimension: 'country', '=': country }
+                        ]
+                        }
+                    }
+                });
+                seriesList.push({
+                        type: 'line',
+                        datasetId: datasetId,
+                        showSymbol: false,
+                        name: country,
+                        endLabel: {
+                            show: true,
+                            formatter: function (params) {
+                            return params.value[0] + ': ' + params.value[2];
+                            }
+                        },
+                        labelLayout: {
+                            moveOverlap: 'shiftY'
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        },
+                        encode: {
+                            x: 'year',
+                            y: 'num',
+                            label: ['country', 'num'],
+                            itemName: 'year',
+                            tooltip: ['num']
+                        }
+                });
+            });
+            option = {
+                animationDuration: 10000,
+                dataset: [
+                {
+                    id: 'dataset_raw',
+                    source: _rawData
+                },
+                ...datasetWithFilters
+                ],
+                title: {
+                    text: 'Electricity production from coal source(Different Income)'
+                },
+                tooltip: {
+                    order: 'valueDesc',
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    nameLocation: 'middle'
+                },
+                yAxis: {
+                    name: '% of total'
+                },
+                grid: {
+                    right: 140
+                },
+                series: seriesList
+            };
+            myChart.setOption(option);
+        }
+
+        option && myChart.setOption(option);
+
+    </script>
+    <script type="text/javascript">
+        var chartDom1 = document.getElementById('income_area');
+        var myChart1 = echarts.init(chartDom1);
+        var option1;
+        $.get(
+            './Data/Energy/coal_for_line.json',
+            function (_rawData) {
+                run1(_rawData);
+            }
+        );
+        function run1(_rawData) {
+            const countries = ['East Asia & Pacific', 'Europe & Central Asia',
+                 'Latin America & Caribbean', 'Middle East & North Africa',
+                 'Sub-Saharan Africa','North America'];
+            const datasetWithFilters = [];
+            const seriesList = [];
+            echarts.util.each(countries, function (country) {
+                var datasetId = 'dataset_' + country;
+                datasetWithFilters.push({
+                    id: datasetId,
+                    fromDatasetId: 'dataset_raw',
+                    transform: {
+                        type: 'filter',
+                        config: {
+                        and: [
+                            { dimension: 'year', gte: 1960 },
+                            { dimension: 'country', '=': country }
+                        ]
+                        }
+                    }
+                });
+                seriesList.push({
+                        type: 'line',
+                        datasetId: datasetId,
+                        showSymbol: false,
+                        name: country,
+                        endLabel: {
+                            show: true,
+                            formatter: function (params) {
+                            return params.value[0] + ': ' + params.value[2];
+                            }
+                        },
+                        labelLayout: {
+                            moveOverlap: 'shiftY'
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        },
+                        encode: {
+                            x: 'year',
+                            y: 'num',
+                            label: ['country', 'num'],
+                            itemName: 'year',
+                            tooltip: ['num']
+                        }
+                });
+            });
+            option1 = {
+                animationDuration: 10000,
+                dataset: [
+                {
+                    id: 'dataset_raw',
+                    source: _rawData
+                },
+                ...datasetWithFilters
+                ],
+                title: {
+                    text: 'Electricity production from coal source(Different area)'
+                },
+                tooltip: {
+                    order: 'valueDesc',
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    nameLocation: 'middle'
+                },
+                yAxis: {
+                    name: '% of total'
+                },
+                grid: {
+                    right: 140
+                },
+                series: seriesList
+            };
+            myChart1.setOption(option1);
+        }
+
+        option1 && myChart1.setOption(option1);
+
+    </script>
+
+    
+</body>
+</html>
