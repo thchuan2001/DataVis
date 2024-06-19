@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>世界地图示例</title>
+    <!-- 引入 echarts.js -->
+    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+</head>
+<body>
+
+
+
+    
+    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+    <div id="main" style="width: 2000px; height: 1000px;"></div>
+    <script type="text/javascript">
+        // 初始化 ECharts 实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        // 加载 world.geojson 文件
+        fetch('./Data/world.geojson')
+            .then(response => response.json())
+            .then(geoJson => {
+                // 注册地图
+                echarts.registerMap('world', geoJson);
+
+                // 指定图表的配置项和数据
+                var option = {
+                    title: {
+                        text: '世界地图',
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}'
+                    },
+                    visualMap: {
+                        min: 0,
+                        max: 1000,
+                        left: 'left',
+                        top: 'bottom',
+                        text: ['高', '低'],
+                        calculable: true
+                    },
+                    series: [
+                        {
+                            name: '世界地图',
+                            type: 'map',
+                            mapType: 'world',
+                            roam: true,
+                            label: {
+                                show: false
+                            },
+                            data: [
+                                { name: 'Afghanistan', value: 28397.812 },
+                                { name: 'Angola', value: 19549.124 },
+                                { name: 'Albania', value: 3150.143 },
+                                { name: 'United Arab Emirates', value: 8441.537 },
+                                { name: 'Argentina', value: 40374.224 },
+                                // 添加更多数据
+                            ]
+                        }
+                    ]
+                };
+
+                // 使用刚指定的配置项和数据显示图表
+                myChart.setOption(option);
+            })
+            .catch(error => {
+                console.error('Error loading geojson file:', error);
+            });
+    </script>
+</body>
+</html>
