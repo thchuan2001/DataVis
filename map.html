@@ -1,106 +1,224 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
-    <title>世界地图 - 二氧化碳排放量（时间轴）</title>
+    <title>世界地图 - 经济与环境数据可视化</title>
     <!-- 引入 echarts.js 和 papaparse.js -->
     <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
-
 <body>
     <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
-    <div id="main" style="width: 2000px; height: 1000px;"></div>
+    <div id="main" style="width: 1000px; height: 600px;"></div>
+    <div id="lineChart" style="width: 1000px; height: 400px;"></div>
+    <button id="toggleData">切换数据</button>
     <script type="text/javascript">
         var myChart = echarts.init(document.getElementById('main'));
+        var lineChart = echarts.init(document.getElementById('lineChart'));
+        var globalData = {};
+        var currentDataset = 'CO2';
 
-        // 使用 PapaParse 解析本地 CSV 文件
-        Papa.parse('Data/CO2_GDP/CO2.csv', {
-            download: true,
-            header: true,
-            complete: function (results) {
-                var data = results.data;
-                var allColumns = Object.keys(data[0]);
-                var years = allColumns.filter(column => column !== 'Country Name'); // Filter out the 'Country Name' column
+        function loadData(file, key, callback) {
+            Papa.parse(file, {
+                download: true,
+                header: true,
+                complete: function (results) {
+                    globalData[key] = results.data;
+                    callback(results.data);
+                }
+            });
+        }
 
-                console.log("Available years:", years); // 输出所有解析到的年份，检查是否正确
-
-                var options = [];
-
-                years.forEach(function (year) {
-                    var seriesData = [];
-                    data.forEach(function (item) {
-                        var value = item[year];
-                        if (value !== undefined && value !== '') {
-                            seriesData.push({
-                                name: item['Country Name'],
-                                value: parseFloat(value)
-                            });
+        function findMinMax(data, years, countries) {
+            let min = Infinity, max = -Infinity;
+            data.forEach(item => {
+                if (countries.includes(item['Country Name'])) {
+                    years.forEach(year => {
+                        let value = parseFloat(item[year]);
+                        if (value) {
+                            if (value < min) min = value;
+                            if (value > max) max = value;
                         }
                     });
+                }
+            });
+            return { min, max };
+        }
 
-                    if (seriesData.length > 0) { // 确保数据存在
-                        options.push({
-                            title: {
-                                text: '世界地图 - ' + year + '年二氧化碳排放量'
+        function setupChart(data, titleSuffix, colorScheme) {
+            fetch('./Data/world.geojson').then(response => response.json()).then(geoJson => {
+                echarts.registerMap('world', geoJson);
+                var countries = geoJson.features.map(feature => feature.properties.name);
+                var years = Object.keys(data[0]).filter(key => key !== 'Country Name');
+                var filteredData = data.filter(item => countries.includes(item['Country Name']));
+
+                filteredData.forEach(item => {
+                    years.forEach(year => {
+                        item[year] = Math.log(parseFloat(item[year]) + 1);
+                    });
+                });
+
+                var { min, max } = findMinMax(filteredData, years, countries);
+
+                var options = years.map(year => ({
+                    title: { text: '世界地图 - ' + year + '年' + titleSuffix },
+                    series: [{ data: filteredData.map(item => ({ name: item['Country Name'], value: parseFloat(item[year]) })) }]
+                }));
+
+                myChart.setOption({
+                    baseOption: {
+                        timeline: {
+                            axisType: 'category',
+                            autoPlay: false,
+                            playInterval: 200,
+                            data: years,
+                            tooltip: {
+                                formatter: function (params) {
+                                    return params.name;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{b}: {c}'
+                        },
+                        visualMap: {
+                            min: min,
+                            max: max,
+                            left: 'right',
+                            top: 'bottom',
+                            text: ['高', '低'],
+                            calculable: true,
+                            inRange: {
+                                color: colorScheme
+                            }
+                        },
+                        series: [{
+                            type: 'map',
+                            mapType: 'world',
+                            roam: true,
+                            itemStyle: {
+                                borderColor: '#FFF',
+                                borderWidth: 1
                             },
-                            series: [{
-                                data: seriesData
-                            }]
-                        });
+                            emphasis: {
+                                itemStyle: {
+                                    borderColor: '#000',
+                                    borderWidth: 3
+                                },
+                                label: {
+                                    show: true,
+                                    position: 'inside',
+                                    fontSize: 10,
+                                    fontWeight: 'bold'
+                                }
+                            }
+                        }]
+                    },
+                    options: options
+                });
+
+                myChart.on('click', function (params) {
+                    if (params.componentType === 'series') {
+                        updateLineChart(params.name);
                     }
                 });
+            }).catch(error => console.error('Error loading geojson file:', error));
+        }
 
-                fetch('./Data/world.geojson').then(response => response.json()).then(geoJson => {
-                    echarts.registerMap('world', geoJson);
-                    var option = {
-                        baseOption: {
-                            timeline: {
-                                axisType: 'category',
-                                autoPlay: true,
-                                playInterval: 1000,
-                                data: years,
-                                tooltip: {
-                                    formatter: function (params) {
-                                        return params.name;  // Just show the year
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                trigger: 'item',
-                                formatter: '{b}: {c}'
-                            },
-                            visualMap: {
-                                min: 0,
-                                max: 1000000,  // Adjust based on the maximum value in your data if needed
-                                left: 'left',
-                                top: 'bottom',
-                                text: ['高', '低'],  // Text for the top and bottom of the scale bar
-                                calculable: true
-                            },
-                            series: [{
-                                name: 'CO2 Emissions',
-                                type: 'map',
-                                mapType: 'world',
-                                roam: true,
-                                label: {
-                                    show: false  // Set to true if you want country names to show up on the map
-                                }
-                            }]
-                        },
-                        options: options
-                    };
+        function updateLineChart(countryName) {
+    var co2Data = globalData['CO2'].find(item => item['Country Name'] === countryName);
+    var gdpData = globalData['GDP'].find(item => item['Country Name'] === countryName);
+    var years = Object.keys(co2Data).filter(key => key !== 'Country Name');
+
+    var co2SeriesData = years.map(year => parseFloat(co2Data[year]));
+    var gdpSeriesData = years.map(year => parseFloat(gdpData[year]));
+
+    // Calculate min and max for CO2
+    var co2Min = Math.min(...co2SeriesData);
+    var co2Max = Math.max(...co2SeriesData);
+
+    // Calculate min and max for GDP
+    var gdpMin = Math.min(...gdpSeriesData);
+    var gdpMax = Math.max(...gdpSeriesData);
+
+    lineChart.setOption({
+        title: {
+            text: 'GDP and CO2 Over Time - ' + countryName
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        legend: {
+            data: ['CO2', 'GDP']
+        },
+        xAxis: {
+            type: 'category',
+            data: years
+        },
+        yAxis: [
+            {
+                type: 'value',
+                name: 'CO2 Emissions',
+                position: 'left',
+                axisLabel: {
+                    formatter: '{value} mt'
+                },
+                min: co2Min,
+                max: co2Max
+            },
+            {
+                type: 'value',
+                name: 'GDP',
+                position: 'right',
+                axisLabel: {
+                    formatter: '${value} trillion'
+                },
+                min: gdpMin,
+                max: gdpMax
+            }
+        ],
+        series: [
+            {
+                name: 'CO2',
+                type: 'line',
+                yAxisIndex: 0,
+                data: co2SeriesData,
+                lineStyle: {
+                    color: '#C33734'  // Red color for CO2
+                }
+            },
+            {
+                name: 'GDP',
+                type: 'line',
+                yAxisIndex: 1,
+                data: gdpSeriesData,
+                lineStyle: {
+                    color: '#fcbe32'  // Blue color for GDP
+                }
+            }
+        ]
+    });
+}
 
 
 
-                    myChart.setOption(option);
-                }).catch(error => {
-                    console.error('Error loading geojson file:', error);
-                });
+
+        loadData('Data/CO2_GDP/CO2.csv', 'CO2', function(data) {
+            setupChart(data, '二氧化碳排放量 (Log)', ['#5A99D3', '#C33734']);
+            // Ensure both datasets are loaded initially
+            loadData('Data/CO2_GDP/GDP.csv', 'GDP', function(data) {});
+        });
+
+        document.getElementById('toggleData').addEventListener('click', function () {
+            if (currentDataset === 'CO2') {
+                setupChart(globalData['GDP'], 'GDP (Log)', ['#2F4858', '#FFEF87']);
+                currentDataset = 'GDP';
+            } else {
+                setupChart(globalData['CO2'], '二氧化碳排放量 (Log)', ['#5A99D3', '#C33734']);
+                currentDataset = 'CO2';
             }
         });
     </script>
 </body>
-
 </html>
