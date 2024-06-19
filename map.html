@@ -1,74 +1,99 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
-    <title>世界地图 - 二氧化碳排放量</title>
+    <title>世界地图 - 二氧化碳排放量（时间轴）</title>
     <!-- 引入 echarts.js 和 papaparse.js -->
     <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
+
 <body>
     <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
     <div id="main" style="width: 2000px; height: 1000px;"></div>
     <script type="text/javascript">
-        // 初始化 ECharts 实例
         var myChart = echarts.init(document.getElementById('main'));
 
         // 使用 PapaParse 解析本地 CSV 文件
-        Papa.parse('./Data/CO2_GDP/CO2.csv', {
+        Papa.parse('Data/CO2_GDP/CO2.csv', {
             download: true,
             header: true,
-            complete: function(results) {
+            complete: function (results) {
                 var data = results.data;
-                var formattedData = [];
+                var allColumns = Object.keys(data[0]);
+                var years = allColumns.filter(column => column !== 'Country Name'); // Filter out the 'Country Name' column
 
-                // 格式化数据，以适应ECharts
-                for (var i = 0; i < data.length; i++) {
-                    // 这里我们选择了1990年的数据，可以根据需要更改年份
-                    if (data[i]['1990'] !== undefined && data[i]['1990'] !== '') {
-                        formattedData.push({
-                            name: data[i]['Country Name'],
-                            value: parseFloat(data[i]['1990'])
+                console.log("Available years:", years); // 输出所有解析到的年份，检查是否正确
+
+                var options = [];
+
+                years.forEach(function (year) {
+                    var seriesData = [];
+                    data.forEach(function (item) {
+                        var value = item[year];
+                        if (value !== undefined && value !== '') {
+                            seriesData.push({
+                                name: item['Country Name'],
+                                value: parseFloat(value)
+                            });
+                        }
+                    });
+
+                    if (seriesData.length > 0) { // 确保数据存在
+                        options.push({
+                            title: {
+                                text: '世界地图 - ' + year + '年二氧化碳排放量'
+                            },
+                            series: [{
+                                data: seriesData
+                            }]
                         });
                     }
-                }
+                });
 
-                // 加载并注册地图数据
                 fetch('./Data/world.geojson').then(response => response.json()).then(geoJson => {
                     echarts.registerMap('world', geoJson);
-                    // 图表配置
                     var option = {
-                        title: {
-                            text: '世界地图 - 1990年二氧化碳排放量',
-                            left: 'center'
-                        },
-                        tooltip: {
-                            trigger: 'item',
-                            formatter: '{b}: {c}'
-                        },
-                        visualMap: {
-                            min: 0,
-                            max: 1000000,  // 根据实际最大值调整
-                            left: 'left',
-                            top: 'bottom',
-                            text: ['高', '低'],
-                            calculable: true
-                        },
-                        series: [
-                            {
-                                name: 'CO2 Emissions in 1990',
+                        baseOption: {
+                            timeline: {
+                                axisType: 'category',
+                                autoPlay: true,
+                                playInterval: 1000,
+                                data: years,
+                                tooltip: {
+                                    formatter: function (params) {
+                                        return params.name;  // Just show the year
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: '{b}: {c}'
+                            },
+                            visualMap: {
+                                min: 0,
+                                max: 1000000,  // Adjust based on the maximum value in your data if needed
+                                left: 'left',
+                                top: 'bottom',
+                                text: ['高', '低'],  // Text for the top and bottom of the scale bar
+                                calculable: true
+                            },
+                            series: [{
+                                name: 'CO2 Emissions',
                                 type: 'map',
                                 mapType: 'world',
                                 roam: true,
                                 label: {
-                                    show: false
-                                },
-                                data: formattedData
-                            }
-                        ]
+                                    show: false  // Set to true if you want country names to show up on the map
+                                }
+                            }]
+                        },
+                        options: options
                     };
 
-                    // 使用配置和数据显示图表
+
+
                     myChart.setOption(option);
                 }).catch(error => {
                     console.error('Error loading geojson file:', error);
@@ -77,4 +102,5 @@
         });
     </script>
 </body>
+
 </html>
