@@ -2,9 +2,10 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>世界地图示例</title>
-    <!-- 引入 echarts.js -->
+    <title>世界地图 - 二氧化碳排放量</title>
+    <!-- 引入 echarts.js 和 papaparse.js -->
     <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
     <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
@@ -13,58 +14,67 @@
         // 初始化 ECharts 实例
         var myChart = echarts.init(document.getElementById('main'));
 
-        // 加载 world.geojson 文件
-        fetch('./Data/world.geojson')
-            .then(response => response.json())
-            .then(geoJson => {
-                // 注册地图
-                echarts.registerMap('world', geoJson);
+        // 使用 PapaParse 解析本地 CSV 文件
+        Papa.parse('./Data/CO2_GDP/CO2.csv', {
+            download: true,
+            header: true,
+            complete: function(results) {
+                var data = results.data;
+                var formattedData = [];
 
-                // 指定图表的配置项和数据
-                var option = {
-                    title: {
-                        text: '世界地图',
-                        left: 'center'
-                    },
-                    tooltip: {
-                        trigger: 'item',
-                        formatter: '{b}'
-                    },
-                    visualMap: {
-                        min: 0,
-                        max: 1000,
-                        left: 'left',
-                        top: 'bottom',
-                        text: ['高', '低'],
-                        calculable: true
-                    },
-                    series: [
-                        {
-                            name: '世界地图',
-                            type: 'map',
-                            mapType: 'world',
-                            roam: true,
-                            label: {
-                                show: false
-                            },
-                            data: [
-                                { name: 'Afghanistan', value: 28397.812 },
-                                { name: 'Angola', value: 19549.124 },
-                                { name: 'Albania', value: 3150.143 },
-                                { name: 'United Arab Emirates', value: 8441.537 },
-                                { name: 'Argentina', value: 40374.224 },
-                                // 添加更多数据
-                            ]
-                        }
-                    ]
-                };
+                // 格式化数据，以适应ECharts
+                for (var i = 0; i < data.length; i++) {
+                    // 这里我们选择了1990年的数据，可以根据需要更改年份
+                    if (data[i]['1990'] !== undefined && data[i]['1990'] !== '') {
+                        formattedData.push({
+                            name: data[i]['Country Name'],
+                            value: parseFloat(data[i]['1990'])
+                        });
+                    }
+                }
 
-                // 使用刚指定的配置项和数据显示图表
-                myChart.setOption(option);
-            })
-            .catch(error => {
-                console.error('Error loading geojson file:', error);
-            });
+                // 加载并注册地图数据
+                fetch('./Data/world.geojson').then(response => response.json()).then(geoJson => {
+                    echarts.registerMap('world', geoJson);
+                    // 图表配置
+                    var option = {
+                        title: {
+                            text: '世界地图 - 1990年二氧化碳排放量',
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{b}: {c}'
+                        },
+                        visualMap: {
+                            min: 0,
+                            max: 1000000,  // 根据实际最大值调整
+                            left: 'left',
+                            top: 'bottom',
+                            text: ['高', '低'],
+                            calculable: true
+                        },
+                        series: [
+                            {
+                                name: 'CO2 Emissions in 1990',
+                                type: 'map',
+                                mapType: 'world',
+                                roam: true,
+                                label: {
+                                    show: false
+                                },
+                                data: formattedData
+                            }
+                        ]
+                    };
+
+                    // 使用配置和数据显示图表
+                    myChart.setOption(option);
+                }).catch(error => {
+                    console.error('Error loading geojson file:', error);
+                });
+            }
+        });
     </script>
 </body>
 </html>
