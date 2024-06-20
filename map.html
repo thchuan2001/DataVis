@@ -2,16 +2,52 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>世界地图 - 经济与环境数据可视化</title>
-    <!-- 引入 echarts.js 和 papaparse.js -->
+    <title>World Map - Economic and Environmental Data Visualization</title>
     <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        .header {
+            display: flex; /* Enables flexbox layout */
+            align-items: center; /* Vertically center the items */
+            justify-content: space-between; /* Space between the title and the button */
+            margin-bottom: 20px; /* Margin below the header */
+        }
+
+        button {
+            background-color: #4CAF50; /* Green background */
+            border: none; /* No borders */
+            color: white; /* White text */
+            padding: 10px 20px; /* Smaller padding */
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049; /* Darker shade on hover */
+        }
+
+        h1 {
+            margin: 0; /* Removes default margin */
+            padding: 0; /* Removes default padding */
+        }
+    </style>
 </head>
 <body>
-    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+
+    <div class="header">
+    <h1>World Map - Economic and Environmental Data Visualization</h1>
+    <button id="toggleData">Change Data</button>
+    </div>
+
     <div id="main" style="width: 1000px; height: 600px;"></div>
     <div id="lineChart" style="width: 1000px; height: 400px;"></div>
-    <button id="toggleData">切换数据</button>
+
+
+
     <script type="text/javascript">
         var myChart = echarts.init(document.getElementById('main'));
         var lineChart = echarts.init(document.getElementById('lineChart'));
@@ -54,14 +90,14 @@
 
                 filteredData.forEach(item => {
                     years.forEach(year => {
-                        item[year] = Math.log(parseFloat(item[year]) + 1);
+                        item[year] = Math.sqrt(parseFloat(item[year]) + 1);
                     });
                 });
 
                 var { min, max } = findMinMax(filteredData, years, countries);
 
                 var options = years.map(year => ({
-                    title: { text: '世界地图 - ' + year + '年' + titleSuffix },
+                    title: { text: year + ' ' + titleSuffix },
                     series: [{ data: filteredData.map(item => ({ name: item['Country Name'], value: parseFloat(item[year]) })) }]
                 }));
 
@@ -70,7 +106,7 @@
                         timeline: {
                             axisType: 'category',
                             autoPlay: false,
-                            playInterval: 200,
+                            playInterval: 600,
                             data: years,
                             tooltip: {
                                 formatter: function (params) {
@@ -87,7 +123,7 @@
                             max: max,
                             left: 'right',
                             top: 'bottom',
-                            text: ['高', '低'],
+                            text: ['High', 'Low'],
                             calculable: true,
                             inRange: {
                                 color: colorScheme
@@ -205,17 +241,17 @@
 
 
         loadData('Data/CO2_GDP/CO2.csv', 'CO2', function(data) {
-            setupChart(data, '二氧化碳排放量 (Log)', ['#5A99D3', '#C33734']);
+            setupChart(data, 'Carbon Dioxide Emissions (Square Root)', ['#5A99D3', '#C33734']);
             // Ensure both datasets are loaded initially
             loadData('Data/CO2_GDP/GDP.csv', 'GDP', function(data) {});
         });
 
         document.getElementById('toggleData').addEventListener('click', function () {
             if (currentDataset === 'CO2') {
-                setupChart(globalData['GDP'], 'GDP (Log)', ['#2F4858', '#FFEF87']);
+                setupChart(globalData['GDP'], 'GDP (Square Root)', ['#2F4858', '#FFEF87']);
                 currentDataset = 'GDP';
             } else {
-                setupChart(globalData['CO2'], '二氧化碳排放量 (Log)', ['#5A99D3', '#C33734']);
+                setupChart(globalData['CO2'], 'Carbon Dioxide Emissions (Square Root)', ['#5A99D3', '#C33734']);
                 currentDataset = 'CO2';
             }
         });
