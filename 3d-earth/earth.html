@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>3D Globe with ECharts</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #main {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+    <!-- 引入 echarts 和 echarts-gl -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.2.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+</head>
+
+<body>
+    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+    <div id="main"></div>
+    <script type="text/javascript">
+        var chartDom = document.getElementById('main');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+            backgroundColor: '#000',
+            globe: {
+                baseTexture: 'https://echarts.apache.org/examples/data-gl/asset/world.topo.bathy.200401.jpg',
+                heightTexture: 'https://echarts.apache.org/examples/data-gl/asset/bathymetry_bw_composite_4k.jpg',
+                displacementScale: 0.2,
+                shading: 'realistic',
+                environment: 'https://echarts.apache.org/examples/data-gl/asset/starfield.jpg',
+                realisticMaterial: {
+                    roughness: 'https://echarts.apache.org/examples/asset/get/s/data-1497599804873-H1SHkG-mZ.jpg',
+                    metalness: 'https://echarts.apache.org/examples/asset/get/s/data-1497599800643-BJbHyGWQW.jpg',
+                    textureTiling: [8, 4]
+                },
+                postEffect: {
+                    enable: true
+                },
+                viewControl: {
+                    autoRotate: false
+                },
+                light: {
+                    main: {
+                        intensity: 2,
+                        shadow: true
+                    },
+                    ambientCubemap: {
+                        texture: 'https://echarts.apache.org/examples/data-gl/asset/pisa.hdr',
+                        exposure: 2,
+                        diffuseIntensity: 2,
+                        specularIntensity: 2
+                    }
+                }
+            }
+        };
+
+        option && myChart.setOption(option);
+    </script>
+</body>
+
+</html>

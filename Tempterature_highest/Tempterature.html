@@ -34,15 +34,16 @@
                         baseOption: {
                             timeline: {
                                 axisType: 'category',
-                                autoPlay: false,
-                                playInterval: 2000,
+                                autoPlay: true,
+                                playInterval: 1000,
                                 data: years,
-                                animation: false,
                                 label: {
                                     formatter: function (s) {
                                         return s;
                                     }
-                                }
+                                },
+                                animation: false // Disable timeline animation
+
                             },
                             tooltip: {
                                 trigger: 'item',
@@ -84,12 +85,12 @@
                                 type: 'scatter',
                                 coordinateSystem: 'geo',
                                 symbolSize: function (val) {
-                                    return 10;
+                                    return 30;
                                 },
                                 data: [],
                                 itemStyle: {
                                     normal: {
-                                        opacity: 1.0 // 设置透明度
+                                        opacity: 0.2 // 设置透明度
                                     }
                                 }
                             }]
@@ -129,7 +130,7 @@
                         latitude: parseFloat(item.latitute),  // 注意：如果是 'latitude'，则改为 'latitude'
                         longitude: parseFloat(item.longitude),
                         elevation: parseFloat(item.elevation),
-                        temperature: parseFloat(item.T)
+                        temperature: parseFloat(item.T_max)
                     }));
                     callback();
                 }
@@ -139,7 +140,7 @@
         // 加载多个年份数据的函数
         function loadData(callback) {
             var startYear = 2000;
-            var endYear = 2023;
+            var endYear = 2019;
             var loadedCount = 0;
 
             for (var year = startYear; year <= endYear; year++) {
