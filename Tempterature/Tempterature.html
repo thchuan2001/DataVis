@@ -10,10 +10,12 @@
 </head>
 
 <body>
+    <!-- title: 全球气温变化图-->
+    <h1>全球气温变化图</h1>
+
     <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
     <div id="main" style="width: 1500px; height: 800px;"></div>
     <div id="lineChart" style="width: 1500px; height: 700px;"></div>
-    <button id="toggleData">切换数据</button>
     <script type="text/javascript">
         var myChart = echarts.init(document.getElementById('main'));
         var lineChart = echarts.init(document.getElementById('lineChart'));
@@ -35,7 +37,7 @@
                             timeline: {
                                 axisType: 'category',
                                 autoPlay: false,
-                                playInterval: 2000,
+                                playInterval: 1000,
                                 data: years,
                                 animation: false,
                                 label: {
